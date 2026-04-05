@@ -217,51 +217,220 @@ api:
     # Workspaces
     - { method: GET, path: /api/workspaces, handler: list, auth: true }
     - { method: GET, path: /api/workspaces/summary, handler: workspaceSummary, auth: true }
-    - { method: POST, path: /api/workspaces, handler: create, auth: true }
+    - method: POST
+      path: /api/workspaces
+      handler: create
+      auth: true
+      validate:
+        body:
+          name: { required: true, type: string, min_length: 1, max_length: 255 }
+          description: { type: string }
     - { method: GET, path: "/api/workspaces/:workspaceId", handler: show, auth: true }
-    - { method: PATCH, path: "/api/workspaces/:workspaceId", handler: update, auth: true }
+    - method: PATCH
+      path: "/api/workspaces/:workspaceId"
+      handler: update
+      auth: true
+      validate:
+        params:
+          workspaceId: { required: true, type: uuid }
+        body:
+          name: { type: string, min_length: 1, max_length: 255 }
+          description: { type: string }
     - { method: DELETE, path: "/api/workspaces/:workspaceId", handler: remove, auth: true }
     - { method: GET, path: "/api/workspaces/:workspaceId/members", handler: listMembers, auth: true }
-    - { method: POST, path: "/api/workspaces/:workspaceId/invites", handler: invite, auth: true }
+    - method: POST
+      path: "/api/workspaces/:workspaceId/invites"
+      handler: invite
+      auth: true
+      validate:
+        params:
+          workspaceId: { required: true, type: uuid }
+        body:
+          email: { required: true, type: string, pattern: "email" }
     # Boards
     - { method: GET, path: "/api/workspaces/:workspaceId/boards", handler: listByWorkspace, auth: true }
-    - { method: POST, path: "/api/workspaces/:workspaceId/boards", handler: createBoard, auth: true }
+    - method: POST
+      path: "/api/workspaces/:workspaceId/boards"
+      handler: createBoard
+      auth: true
+      validate:
+        params:
+          workspaceId: { required: true, type: uuid }
+        body:
+          name: { required: true, type: string, min_length: 1, max_length: 255 }
+          description: { type: string }
+          visibility: { type: string, enum: [workspace, private, public] }
+          background: { type: string }
     - { method: GET, path: "/api/boards/:boardId", handler: showBoard, auth: true }
-    - { method: PATCH, path: "/api/boards/:boardId", handler: updateBoard, auth: true }
-    - { method: POST, path: "/api/boards/:boardId/members", handler: addMember, auth: true }
+    - method: PATCH
+      path: "/api/boards/:boardId"
+      handler: updateBoard
+      auth: true
+      validate:
+        params:
+          boardId: { required: true, type: uuid }
+        body:
+          name: { type: string, min_length: 1, max_length: 255 }
+          description: { type: string }
+          visibility: { type: string, enum: [workspace, private, public] }
+          background: { type: string }
+    - method: POST
+      path: "/api/boards/:boardId/members"
+      handler: addMember
+      auth: true
+      validate:
+        params:
+          boardId: { required: true, type: uuid }
+        body:
+          userId: { required: true, type: uuid }
+          role: { type: string, enum: [admin, member, viewer] }
     - { method: DELETE, path: "/api/boards/:boardId/members/:userId", handler: removeMember, auth: true }
     # Snapshot
     - { method: GET, path: "/api/boards/:boardId/snapshot", handler: snapshot, auth: true }
     # Lists
     - { method: GET, path: "/api/boards/:boardId/lists", handler: listLists, auth: true }
-    - { method: POST, path: "/api/boards/:boardId/lists", handler: createList, auth: true }
-    - { method: PATCH, path: "/api/lists/:listId", handler: updateList, auth: true }
+    - method: POST
+      path: "/api/boards/:boardId/lists"
+      handler: createList
+      auth: true
+      validate:
+        params:
+          boardId: { required: true, type: uuid }
+        body:
+          name: { required: true, type: string, min_length: 1, max_length: 255 }
+    - method: PATCH
+      path: "/api/lists/:listId"
+      handler: updateList
+      auth: true
+      validate:
+        params:
+          listId: { required: true, type: uuid }
+        body:
+          name: { type: string, min_length: 1, max_length: 255 }
     - { method: DELETE, path: "/api/lists/:listId", handler: archiveList, auth: true }
-    - { method: POST, path: "/api/lists/:listId/reorder", handler: reorderList, auth: true }
+    - method: POST
+      path: "/api/lists/:listId/reorder"
+      handler: reorderList
+      auth: true
+      validate:
+        params:
+          listId: { required: true, type: uuid }
+        body:
+          pos: { required: true, type: integer }
     # Cards
     - { method: GET, path: "/api/boards/:boardId/cards", handler: listCards, auth: true }
-    - { method: POST, path: /api/cards, handler: createCard, auth: true }
+    - method: POST
+      path: /api/cards
+      handler: createCard
+      auth: true
+      validate:
+        body:
+          listId: { required: true, type: uuid }
+          name: { required: true, type: string, min_length: 1, max_length: 500 }
+          description: { type: string }
     - { method: GET, path: "/api/cards/:cardId", handler: showCard, auth: true }
-    - { method: PATCH, path: "/api/cards/:cardId", handler: updateCard, auth: true }
+    - method: PATCH
+      path: "/api/cards/:cardId"
+      handler: updateCard
+      auth: true
+      validate:
+        params:
+          cardId: { required: true, type: uuid }
+        body:
+          name: { type: string, min_length: 1, max_length: 500 }
+          description: { type: string }
+          due_date: { type: string }
+          due_complete: { type: boolean }
     - { method: DELETE, path: "/api/cards/:cardId", handler: archiveCard, auth: true }
-    - { method: POST, path: "/api/cards/:cardId/move", handler: moveCard, auth: true }
+    - method: POST
+      path: "/api/cards/:cardId/move"
+      handler: moveCard
+      auth: true
+      validate:
+        params:
+          cardId: { required: true, type: uuid }
+        body:
+          toListId: { required: true, type: uuid }
+          pos: { type: integer }
     # Card members
-    - { method: POST, path: "/api/cards/:cardId/members", handler: addCardMember, auth: true }
+    - method: POST
+      path: "/api/cards/:cardId/members"
+      handler: addCardMember
+      auth: true
+      validate:
+        params:
+          cardId: { required: true, type: uuid }
+        body:
+          userId: { required: true, type: uuid }
     - { method: DELETE, path: "/api/cards/:cardId/members/:userId", handler: removeCardMember, auth: true }
     # Labels
     - { method: GET, path: "/api/boards/:boardId/labels", handler: listLabels, auth: true }
-    - { method: POST, path: "/api/boards/:boardId/labels", handler: createLabel, auth: true }
-    - { method: PATCH, path: "/api/labels/:labelId", handler: updateLabel, auth: true }
+    - method: POST
+      path: "/api/boards/:boardId/labels"
+      handler: createLabel
+      auth: true
+      validate:
+        params:
+          boardId: { required: true, type: uuid }
+        body:
+          color: { required: true, type: string }
+          name: { type: string }
+    - method: PATCH
+      path: "/api/labels/:labelId"
+      handler: updateLabel
+      auth: true
+      validate:
+        params:
+          labelId: { required: true, type: uuid }
+        body:
+          name: { type: string }
+          color: { type: string }
     - { method: DELETE, path: "/api/labels/:labelId", handler: deleteLabel, auth: true }
     # Card labels
-    - { method: POST, path: "/api/cards/:cardId/labels/:labelId", handler: addCardLabel, auth: true }
+    - method: POST
+      path: "/api/cards/:cardId/labels/:labelId"
+      handler: addCardLabel
+      auth: true
+      validate:
+        params:
+          cardId: { required: true, type: uuid }
+          labelId: { required: true, type: uuid }
     - { method: DELETE, path: "/api/cards/:cardId/labels/:labelId", handler: removeCardLabel, auth: true }
     # Checklists
-    - { method: POST, path: "/api/cards/:cardId/checklists", handler: createChecklist, auth: true }
+    - method: POST
+      path: "/api/cards/:cardId/checklists"
+      handler: createChecklist
+      auth: true
+      validate:
+        params:
+          cardId: { required: true, type: uuid }
+        body:
+          name: { required: true, type: string, min_length: 1, max_length: 255 }
     - { method: DELETE, path: "/api/checklists/:checklistId", handler: deleteChecklist, auth: true }
     # Checkitems
-    - { method: POST, path: "/api/checklists/:checklistId/checkitems", handler: createCheckitem, auth: true }
-    - { method: PATCH, path: "/api/checkitems/:checkitemId", handler: updateCheckitem, auth: true }
+    - method: POST
+      path: "/api/checklists/:checklistId/checkitems"
+      handler: createCheckitem
+      auth: true
+      validate:
+        params:
+          checklistId: { required: true, type: uuid }
+        body:
+          name: { required: true, type: string, min_length: 1, max_length: 500 }
+          due_date: { type: string }
+          assigned_to: { type: uuid }
+    - method: PATCH
+      path: "/api/checkitems/:checkitemId"
+      handler: updateCheckitem
+      auth: true
+      validate:
+        params:
+          checkitemId: { required: true, type: uuid }
+        body:
+          name: { type: string, min_length: 1, max_length: 500 }
+          checked: { type: boolean }
+          due_date: { type: string }
+          assigned_to: { type: uuid }
 
 behaviors: []
 
