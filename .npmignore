@@ -1,0 +1,5 @@
+test/
+.git/
+.DS_Store
+.torque/
+*.tmp

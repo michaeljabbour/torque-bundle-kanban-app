@@ -1,0 +1,14 @@
+{
+  "name": "@torquedev/bundle-kanban-app",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "logic.js",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/torque-framework/torque-bundle-kanban-app.git"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  }
+}

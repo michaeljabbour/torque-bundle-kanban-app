@@ -1,0 +1,284 @@
+name: kanban-app
+version: "1.0.0"
+description: "Consolidated Kanban application - workspaces, boards, lists, cards, labels, and checklists"
+
+schema:
+  tables:
+    workspaces:
+      columns:
+        id: { type: uuid, primary: true }
+        name: { type: string, null: false }
+        description: { type: string }
+        owner_id: { type: uuid, null: false }
+        status: { type: string, default: "active" }
+        created_at: { type: timestamp }
+        updated_at: { type: timestamp }
+    workspace_memberships:
+      columns:
+        id: { type: uuid, primary: true }
+        workspace_id: { type: uuid, null: false }
+        user_id: { type: uuid, null: false }
+        role: { type: string, default: "member" }
+        created_at: { type: timestamp }
+        updated_at: { type: timestamp }
+    workspace_invites:
+      columns:
+        id: { type: uuid, primary: true }
+        workspace_id: { type: uuid, null: false }
+        email: { type: string, null: false }
+        invited_by: { type: uuid, null: false }
+        status: { type: string, default: "pending" }
+        created_at: { type: timestamp }
+        updated_at: { type: timestamp }
+    boards:
+      columns:
+        id: { type: uuid, primary: true }
+        workspace_id: { type: uuid, null: false }
+        name: { type: string, null: false }
+        description: { type: string }
+        visibility: { type: string, default: "workspace" }
+        background: { type: string, default: "#0079BF" }
+        status: { type: string, default: "active" }
+        created_at: { type: timestamp }
+        updated_at: { type: timestamp }
+    board_memberships:
+      columns:
+        id: { type: uuid, primary: true }
+        board_id: { type: uuid, null: false }
+        user_id: { type: uuid, null: false }
+        role: { type: string, default: "member" }
+        created_at: { type: timestamp }
+        updated_at: { type: timestamp }
+    lists:
+      columns:
+        id: { type: uuid, primary: true }
+        board_id: { type: uuid, null: false }
+        name: { type: string, null: false }
+        pos: { type: integer, null: false }
+        archived: { type: integer, default: 0 }
+        created_at: { type: timestamp }
+        updated_at: { type: timestamp }
+    cards:
+      columns:
+        id: { type: uuid, primary: true }
+        list_id: { type: uuid, null: false }
+        board_id: { type: uuid, null: false }
+        name: { type: string, null: false }
+        description: { type: string }
+        pos: { type: integer, null: false }
+        due_date: { type: timestamp }
+        due_complete: { type: integer, default: 0 }
+        archived: { type: integer, default: 0 }
+        version: { type: integer, default: 1 }
+        created_by: { type: uuid }
+        created_at: { type: timestamp }
+        updated_at: { type: timestamp }
+    card_members:
+      columns:
+        id: { type: uuid, primary: true }
+        card_id: { type: uuid, null: false }
+        user_id: { type: uuid, null: false }
+        created_at: { type: timestamp }
+        updated_at: { type: timestamp }
+    labels:
+      columns:
+        id: { type: uuid, primary: true }
+        board_id: { type: uuid, null: false }
+        name: { type: string }
+        color: { type: string, null: false }
+        created_at: { type: timestamp }
+        updated_at: { type: timestamp }
+    card_labels:
+      columns:
+        id: { type: uuid, primary: true }
+        card_id: { type: uuid, null: false }
+        label_id: { type: uuid, null: false }
+        created_at: { type: timestamp }
+        updated_at: { type: timestamp }
+    checklists:
+      columns:
+        id: { type: uuid, primary: true }
+        card_id: { type: uuid, null: false }
+        name: { type: string, null: false }
+        pos: { type: integer, null: false }
+        created_at: { type: timestamp }
+        updated_at: { type: timestamp }
+    checkitems:
+      columns:
+        id: { type: uuid, primary: true }
+        checklist_id: { type: uuid, null: false }
+        name: { type: string, null: false }
+        checked: { type: integer, default: 0 }
+        pos: { type: integer, null: false }
+        due_date: { type: timestamp }
+        assigned_to: { type: uuid }
+        created_at: { type: timestamp }
+        updated_at: { type: timestamp }
+
+events:
+  publishes:
+    - name: kanban-app.workspace.created
+      schema: { workspace_id: uuid, name: string, owner_id: uuid }
+    - name: kanban-app.member.invited
+      schema: { workspace_id: uuid, email: string, invited_by: uuid }
+    - name: kanban-app.board.created
+      schema: { board_id: uuid, workspace_id: uuid, name: string }
+    - name: kanban-app.board.updated
+      schema: { board_id: uuid, changes: object }
+    - name: kanban-app.board.member.added
+      schema: { board_id: uuid, user_id: uuid, role: string }
+    - name: kanban-app.list.created
+      schema: { list_id: uuid, board_id: uuid, name: string }
+    - name: kanban-app.list.reordered
+      schema: { list_id: uuid, board_id: uuid, pos: integer }
+    - name: kanban-app.card.created
+      schema: { card_id: uuid, board_id: uuid, list_id: uuid, name: string, created_by: uuid }
+    - name: kanban-app.card.moved
+      schema: { card_id: uuid, board_id: uuid, from_list_id: uuid, to_list_id: uuid, pos: integer }
+    - name: kanban-app.card.updated
+      schema: { card_id: uuid, board_id: uuid, changes: object }
+    - name: kanban-app.label.created
+      schema: { label_id: uuid, board_id: uuid, name: string, color: string }
+    - name: kanban-app.checkitem.toggled
+      schema: { checkitem_id: uuid, card_id: uuid, checked: integer }
+  subscribes: []
+
+intents: []
+
+interfaces:
+  queries:
+    - listByWorkspace
+  contracts:
+    getWorkspace:
+      description: "Retrieve a workspace by ID"
+      input: { workspaceId: { type: uuid, required: true } }
+      output:
+        type: object
+        nullable: true
+        shape: { id: uuid, name: string, description: string, owner_id: uuid, status: string }
+    listUserWorkspaces:
+      description: "List workspaces a user belongs to"
+      input: { userId: { type: uuid, required: true } }
+      output:
+        type: array
+        items:
+          shape: { id: uuid, name: string, role: string }
+    isMember:
+      description: "Check if a user is a member of a workspace"
+      input:
+        workspaceId: { type: uuid, required: true }
+        userId: { type: uuid, required: true }
+      output:
+        type: boolean
+    listByWorkspace:
+      description: "List active boards in a workspace"
+      input: { workspaceId: { type: uuid, required: true } }
+      output:
+        type: array
+        items:
+          shape: { id: uuid, workspace_id: uuid, name: string, description: string, visibility: string, background: string, status: string }
+    getBoard:
+      description: "Retrieve a board by ID"
+      input: { boardId: { type: uuid, required: true } }
+      output:
+        type: object
+        nullable: true
+        shape: { id: uuid, workspace_id: uuid, name: string, description: string, visibility: string, background: string, status: string }
+    authorizeBoardAccess:
+      description: "Check if a user has access to a board"
+      input:
+        boardId: { type: uuid, required: true }
+        userId: { type: uuid, required: true }
+      output:
+        type: boolean
+    listBoardMembers:
+      description: "List members of a board"
+      input: { boardId: { type: uuid, required: true } }
+      output:
+        type: array
+        items:
+          shape: { id: uuid, board_id: uuid, user_id: uuid, role: string }
+    getCard:
+      description: "Retrieve a card by ID with members, labels, and checklists"
+      input: { cardId: { type: uuid, required: true } }
+      output:
+        type: object
+        nullable: true
+        shape: { id: uuid, list_id: uuid, board_id: uuid, name: string, description: string, pos: integer, due_date: "timestamp?", due_complete: integer, archived: integer, version: integer, created_by: uuid, created_at: timestamp, updated_at: timestamp, members: array, labels: array, checklists: array }
+    getBoardSnapshot:
+      description: "Get full board state: board, lists, cards (enriched), labels"
+      input: { boardId: { type: uuid, required: true } }
+      output:
+        type: object
+        shape: { board: object, lists: array, cards: array, labels: array }
+
+api:
+  routes:
+    # Workspaces
+    - { method: GET, path: /api/workspaces, handler: list, auth: true }
+    - { method: GET, path: /api/workspaces/summary, handler: workspaceSummary, auth: true }
+    - { method: POST, path: /api/workspaces, handler: create, auth: true }
+    - { method: GET, path: "/api/workspaces/:workspaceId", handler: show, auth: true }
+    - { method: PATCH, path: "/api/workspaces/:workspaceId", handler: update, auth: true }
+    - { method: DELETE, path: "/api/workspaces/:workspaceId", handler: remove, auth: true }
+    - { method: GET, path: "/api/workspaces/:workspaceId/members", handler: listMembers, auth: true }
+    - { method: POST, path: "/api/workspaces/:workspaceId/invites", handler: invite, auth: true }
+    # Boards
+    - { method: GET, path: "/api/workspaces/:workspaceId/boards", handler: listByWorkspace, auth: true }
+    - { method: POST, path: "/api/workspaces/:workspaceId/boards", handler: createBoard, auth: true }
+    - { method: GET, path: "/api/boards/:boardId", handler: showBoard, auth: true }
+    - { method: PATCH, path: "/api/boards/:boardId", handler: updateBoard, auth: true }
+    - { method: POST, path: "/api/boards/:boardId/members", handler: addMember, auth: true }
+    - { method: DELETE, path: "/api/boards/:boardId/members/:userId", handler: removeMember, auth: true }
+    # Snapshot
+    - { method: GET, path: "/api/boards/:boardId/snapshot", handler: snapshot, auth: true }
+    # Lists
+    - { method: GET, path: "/api/boards/:boardId/lists", handler: listLists, auth: true }
+    - { method: POST, path: "/api/boards/:boardId/lists", handler: createList, auth: true }
+    - { method: PATCH, path: "/api/lists/:listId", handler: updateList, auth: true }
+    - { method: DELETE, path: "/api/lists/:listId", handler: archiveList, auth: true }
+    - { method: POST, path: "/api/lists/:listId/reorder", handler: reorderList, auth: true }
+    # Cards
+    - { method: GET, path: "/api/boards/:boardId/cards", handler: listCards, auth: true }
+    - { method: POST, path: /api/cards, handler: createCard, auth: true }
+    - { method: GET, path: "/api/cards/:cardId", handler: showCard, auth: true }
+    - { method: PATCH, path: "/api/cards/:cardId", handler: updateCard, auth: true }
+    - { method: DELETE, path: "/api/cards/:cardId", handler: archiveCard, auth: true }
+    - { method: POST, path: "/api/cards/:cardId/move", handler: moveCard, auth: true }
+    # Card members
+    - { method: POST, path: "/api/cards/:cardId/members", handler: addCardMember, auth: true }
+    - { method: DELETE, path: "/api/cards/:cardId/members/:userId", handler: removeCardMember, auth: true }
+    # Labels
+    - { method: GET, path: "/api/boards/:boardId/labels", handler: listLabels, auth: true }
+    - { method: POST, path: "/api/boards/:boardId/labels", handler: createLabel, auth: true }
+    - { method: PATCH, path: "/api/labels/:labelId", handler: updateLabel, auth: true }
+    - { method: DELETE, path: "/api/labels/:labelId", handler: deleteLabel, auth: true }
+    # Card labels
+    - { method: POST, path: "/api/cards/:cardId/labels/:labelId", handler: addCardLabel, auth: true }
+    - { method: DELETE, path: "/api/cards/:cardId/labels/:labelId", handler: removeCardLabel, auth: true }
+    # Checklists
+    - { method: POST, path: "/api/cards/:cardId/checklists", handler: createChecklist, auth: true }
+    - { method: DELETE, path: "/api/checklists/:checklistId", handler: deleteChecklist, auth: true }
+    # Checkitems
+    - { method: POST, path: "/api/checklists/:checklistId/checkitems", handler: createCheckitem, auth: true }
+    - { method: PATCH, path: "/api/checkitems/:checkitemId", handler: updateCheckitem, auth: true }
+
+behaviors: []
+
+depends_on: []
+optional_deps:
+  - iam
+
+ui:
+  script: ui/index.js
+  routes:
+    - { path: /, component: workspace-list, fetchUrls: ["/api/workspaces/summary"] }
+    - { path: /dashboard, component: board-dashboard, fetchUrls: ["/api/workspaces/summary"] }
+    - { path: "/workspaces/:workspaceId/boards", component: board-list, fetchUrls: ["/api/workspaces/:workspaceId/boards"] }
+    - { path: "/boards/:boardId", component: board-view, fetchUrls: ["/api/boards/:boardId/snapshot"] }
+    - { path: "/boards/:boardId/members", component: board-members, fetchUrls: ["/api/boards/:boardId"] }
+    - { path: "/boards/:boardId/report", component: board-report, fetchUrls: ["/api/boards/:boardId/snapshot"] }
+    - { path: "/cards/:cardId", component: card-detail, fetchUrls: ["/api/cards/:cardId"] }
+  navigation:
+    - { label: "Workspaces", icon: "folder", path: / }
+    - { label: "Dashboard", icon: "dashboard", path: /dashboard }
