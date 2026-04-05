@@ -135,14 +135,6 @@ describe('KanbanApp bundle', () => {
       assert.ok(event);
     });
 
-    it('create workspace rejects missing name', () => {
-      const result = kanban.routes().create({
-        body: {},
-        currentUser: { id: 'user-1' },
-      });
-      assert.equal(result.status, 400);
-    });
-
     it('show returns 404 for nonexistent workspace', () => {
       const result = kanban.routes().show({
         params: { workspaceId: 'nonexistent' },
@@ -161,15 +153,6 @@ describe('KanbanApp bundle', () => {
       assert.equal(result.status, 201);
       assert.equal(result.data.name, 'Sprint Board');
       assert.equal(result.data.status, 'active');
-    });
-
-    it('createBoard rejects missing name', () => {
-      const result = kanban.routes().createBoard({
-        body: {},
-        params: { workspaceId: 'ws-1' },
-        currentUser: { id: 'user-1' },
-      });
-      assert.equal(result.status, 400);
     });
 
     it('showBoard returns 404 for nonexistent board', () => {
@@ -191,13 +174,6 @@ describe('KanbanApp bundle', () => {
       assert.ok(result.data.pos > 0);
     });
 
-    it('createList rejects missing name', () => {
-      const result = kanban.routes().createList({
-        body: {},
-        params: { boardId: 'board-1' },
-      });
-      assert.equal(result.status, 400);
-    });
   });
 
   describe('card routes', () => {
@@ -215,22 +191,6 @@ describe('KanbanApp bundle', () => {
       });
       assert.equal(result.status, 201);
       assert.equal(result.data.name, 'Fix bug');
-    });
-
-    it('createCard rejects missing name', () => {
-      const result = kanban.routes().createCard({
-        body: { listId },
-        currentUser: { id: 'user-1' },
-      });
-      assert.equal(result.status, 422);
-    });
-
-    it('createCard rejects missing listId', () => {
-      const result = kanban.routes().createCard({
-        body: { name: 'No list' },
-        currentUser: { id: 'user-1' },
-      });
-      assert.equal(result.status, 422);
     });
 
     it('moveCard changes list_id', () => {

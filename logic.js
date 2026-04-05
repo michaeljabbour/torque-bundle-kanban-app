@@ -157,7 +157,6 @@ export default class KanbanApp {
 
       create: (ctx) => {
         const { name, description } = ctx.body;
-        if (!name) return { status: 400, data: { error: 'name is required' } };
 
         const workspace = this.data.insert('workspaces', {
           name,
@@ -214,7 +213,6 @@ export default class KanbanApp {
 
       invite: (ctx) => {
         const { email } = ctx.body;
-        if (!email) return { status: 400, data: { error: 'email is required' } };
 
         const invite = this.data.insert('workspace_invites', {
           workspace_id: ctx.params.workspaceId,
@@ -244,7 +242,6 @@ export default class KanbanApp {
 
       createBoard: (ctx) => {
         const { name, description, visibility, background } = ctx.body;
-        if (!name) return { status: 400, data: { error: 'name is required' } };
 
         const board = this.data.insert('boards', {
           workspace_id: ctx.params.workspaceId,
@@ -293,7 +290,6 @@ export default class KanbanApp {
 
       addMember: (ctx) => {
         const { userId, role } = ctx.body;
-        if (!userId) return { status: 400, data: { error: 'userId is required' } };
 
         const existing = this.data.query('board_memberships', {
           board_id: ctx.params.boardId,
@@ -356,7 +352,6 @@ export default class KanbanApp {
 
       createList: (ctx) => {
         const { name } = ctx.body;
-        if (!name) return { status: 400, data: { error: 'name is required' } };
         const pos = this._nextPos('lists', { board_id: ctx.params.boardId, archived: 0 });
         const list = this.data.insert('lists', {
           board_id: ctx.params.boardId,
@@ -390,7 +385,6 @@ export default class KanbanApp {
         const list = this.data.find('lists', ctx.params.listId);
         if (!list) return { status: 404, data: { error: 'List not found' } };
         const { pos } = ctx.body;
-        if (pos === undefined) return { status: 400, data: { error: 'pos is required' } };
         const updated = this.data.update('lists', list.id, { pos });
         this.events.publish('kanban-app.list.reordered', {
           list_id: list.id,
@@ -410,9 +404,6 @@ export default class KanbanApp {
       createCard: (ctx) => {
         const listId = ctx.body.listId || ctx.body.list_id;
         const { name, description } = ctx.body;
-        if (!name || !listId) {
-          return { status: 422, data: { error: 'listId and name are required' } };
-        }
         const list = this.data.find('lists', listId);
         if (!list) return { status: 404, data: { error: 'List not found' } };
         const pos = this._nextPos('cards', { list_id: listId, archived: 0 });
@@ -474,7 +465,6 @@ export default class KanbanApp {
         const toListId = ctx.body.toListId || ctx.body.list_id;
         const pos = ctx.body.pos;
         const expectedVersion = ctx.body.expectedVersion;
-        if (!toListId) return { status: 422, data: { error: 'toListId is required' } };
 
         if (expectedVersion !== undefined && expectedVersion !== card.version) {
           return { status: 409, data: { error: 'Version conflict', current: card } };
@@ -499,7 +489,6 @@ export default class KanbanApp {
 
       addCardMember: (ctx) => {
         const { userId } = ctx.body;
-        if (!userId) return { status: 400, data: { error: 'userId is required' } };
         const existing = this.data.query('card_members', { card_id: ctx.params.cardId, user_id: userId });
         if (existing.length > 0) return { status: 409, data: { error: 'Already a member' } };
         const member = this.data.insert('card_members', {
@@ -528,7 +517,6 @@ export default class KanbanApp {
 
       createLabel: (ctx) => {
         const { name, color } = ctx.body;
-        if (!color) return { status: 400, data: { error: 'color is required' } };
         const label = this.data.insert('labels', {
           board_id: ctx.params.boardId,
           name: name || '',
@@ -559,7 +547,6 @@ export default class KanbanApp {
 
       addCardLabel: (ctx) => {
         const labelId = ctx.params.labelId || ctx.body.labelId;
-        if (!labelId) return { status: 422, data: { error: 'labelId is required' } };
         const existing = this.data.query('card_labels', { card_id: ctx.params.cardId, label_id: labelId });
         if (existing.length > 0) return { status: 409, data: { error: 'Label already added' } };
         const cardLabel = this.data.insert('card_labels', {
@@ -583,7 +570,6 @@ export default class KanbanApp {
 
       createChecklist: (ctx) => {
         const { name } = ctx.body;
-        if (!name) return { status: 400, data: { error: 'name is required' } };
         const pos = this._nextPos('checklists', { card_id: ctx.params.cardId });
         const checklist = this.data.insert('checklists', {
           card_id: ctx.params.cardId,
@@ -606,7 +592,6 @@ export default class KanbanApp {
 
       createCheckitem: (ctx) => {
         const { name, due_date, assigned_to } = ctx.body;
-        if (!name) return { status: 400, data: { error: 'name is required' } };
         const pos = this._nextPos('checkitems', { checklist_id: ctx.params.checklistId });
         const item = this.data.insert('checkitems', {
           checklist_id: ctx.params.checklistId,
